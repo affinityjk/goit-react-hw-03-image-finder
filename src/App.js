@@ -31,16 +31,22 @@ export class App extends Component {
     if (prevState.searchQuery !== searchQuery) {
       this.setState({ images: [] });
       this.fetchImagesByQuery(searchQuery, page);
+      this.setState({ status: Status.PENDING });
     }
 
     if (prevState.page !== page && page !== 1) {
       this.fetchImagesByQuery(searchQuery, page);
     }
+
+    if (page > 1) {
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }
 
   fetchImagesByQuery = (searchQuery, page) => {
-    this.setState({ status: Status.PENDING });
-
     fetchImages(searchQuery, page)
       .then(({ hits }) => {
         if (hits.length === 0) {
@@ -51,11 +57,6 @@ export class App extends Component {
             images: [...images, ...hits],
             status: Status.RESOLVED,
           }));
-
-          window.scrollTo({
-            top: document.documentElement.scrollHeight,
-            behavior: "smooth",
-          });
         }
       })
       .catch((error) => {
@@ -63,13 +64,13 @@ export class App extends Component {
       });
   };
 
-  handleSubmitForm = (value) => {
+  handleFormSubmit = (value) => {
     this.setState({ searchQuery: value, page: 1 });
   };
 
   handleButtonClick = () => {
-    this.setState(({ page }) => ({
-      page: page + 1,
+    this.setState((prevState) => ({
+      page: prevState.page + 1,
     }));
   };
 
@@ -86,7 +87,7 @@ export class App extends Component {
 
     return (
       <>
-        <Searchbar onSubmit={this.handleSubmitForm} toast={toast} />
+        <Searchbar onSubmit={this.handleFormSubmit} toast={toast} />
         {status === Status.IDLE && <></>}
         {status === Status.PENDING && <Spinner />}
         {status === Status.REJECTED && <Notification text={error} />}
@@ -96,6 +97,7 @@ export class App extends Component {
               images={images}
               onImageClick={this.handleImageClick}
             />
+            {}
             <Button onClick={this.handleButtonClick} />
             {activeImage && (
               <Modal onClose={this.resetActiveImage}>
